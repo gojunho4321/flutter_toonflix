@@ -1,0 +1,94 @@
+import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
+
+
+void main() {
+  runApp(HomeScreen());
+}
+
+class HomeScreen extends StatelessWidget {
+  HomeScreen({super.key});
+  Future<List<dynamic>> webtoons = ApiService.getTodaysToons();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          elevation: 20,
+          title: const Text(
+            '오늘의 웹툰',
+            style: TextStyle(
+              fontSize: 20,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.white,
+        ),
+        body: FutureBuilder(
+          future: webtoons,
+          builder: (context, snapshot) {
+            //snapshot: Future의 상태를 알랴줌
+            if (snapshot.hasData) {
+              return ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (context, index) {
+                  var webtoon=snapshot.data![index];
+                  return Text(webtoon.title);
+                },
+                separatorBuilder: (context, index) => const SizedBox(width:20), itemCount:snapshot.data!.length,
+              )
+            }
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+      
+        ) //builder: ui를 그려준다
+        );
+  }
+}
+
+
+class ApiService {
+  static const String baseUrl =
+      'https://webtoon-crawler.nomadcoders.workers.dev';
+  static const today = 'today';
+  static Future<List> getTodaysToons() async {
+    List<dynamic> list1 = [];
+    final url = Uri.parse('$baseUrl/$today');
+    final response = await http.get(url); //함수 불러오기
+    if (response.statusCode == 200) {
+      final List<dynamic> webtoons = jsonDecode(response.body);
+      for (var webtoon in webtoons) {
+        var classToon = WebtoonModel.fromJson(webtoon);
+        //print(class_toon);
+        list1.add(classToon);
+      }
+      return list1;
+    }
+    throw Error();
+  }
+}
+
+class WebtoonModel {
+  final String id, title, thumb;
+  WebtoonModel.fromJson(Map<String, dynamic> json) //map형식->class 개체& named
+      : id = json['id'],
+        title = json['title'],
+        thumb = json['thumb'];
+}
+
+
+
+class App extends StatelessWidget {
+  const App({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Container(),
+    );
+  }
+}
+
+
